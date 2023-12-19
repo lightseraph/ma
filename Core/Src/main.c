@@ -34,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define BASE_FREQ 130
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -94,10 +94,32 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_3);
-  HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_4);
+  for (uint8_t i = 0; i <= 0x0C; i += 4)
+  {
+    __HAL_TIM_SET_COMPARE(&htim1, i, BASE_FREQ);
+    __HAL_TIM_SET_COMPARE(&htim2, i, BASE_FREQ);
+    __HAL_TIM_SET_COMPARE(&htim3, i, BASE_FREQ);
+    __HAL_TIM_SET_COMPARE(&htim4, i, BASE_FREQ);
+    __HAL_TIM_SET_COMPARE(&htim5, i, BASE_FREQ);
+    __HAL_TIM_SET_COMPARE(&htim12, i, BASE_FREQ);
+  }
+
+  HAL_TIM_Base_Start(&htim1);
+  HAL_TIM_Base_Start(&htim2);
+  HAL_TIM_Base_Start(&htim3);
+  HAL_TIM_Base_Start(&htim4);
+  HAL_TIM_Base_Start(&htim5);
+  HAL_TIM_Base_Start(&htim12);
+
+  for (uint8_t i = 0; i <= 0x0C; i += 4)
+  {
+    HAL_TIM_OC_Start_IT(&htim1, i);
+    HAL_TIM_OC_Start_IT(&htim2, i);
+    HAL_TIM_OC_Start_IT(&htim3, i);
+    HAL_TIM_OC_Start_IT(&htim4, i);
+    HAL_TIM_OC_Start_IT(&htim5, i);
+    HAL_TIM_OC_Start_IT(&htim12, i);
+  }
 
   /* USER CODE END 2 */
 
@@ -159,29 +181,84 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 {
+  static uint16_t channel_duty1 = BASE_FREQ, channel_duty2 = BASE_FREQ, channel_duty3 = BASE_FREQ, channel_duty4 = BASE_FREQ;
+  static uint8_t channel_toggle1 = 0, channel_toggle2 = 0, channel_toggle3 = 0, channel_toggle4 = 0;
 
   /*获取当前计数*/
   uint32_t g_count_val = __HAL_TIM_GET_COUNTER(htim);
+  __NOP();
+  __NOP();
+  __NOP();
+  __NOP();
+  __NOP();
 
   /*设置比较数值*/
   if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, (g_count_val + Random_ccr()) % 0XFFFF);
+  {
+    if (channel_toggle1 == 0)
+    {
+      channel_toggle1++;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, (g_count_val + channel_duty1));
+    }
+    else
+    {
+      channel_duty1 = Random_ccr();
+      channel_toggle1 = 0;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, (g_count_val + channel_duty1));
+    }
+  }
 
   if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
-    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, (g_count_val + Random_ccr()) % 0XFFFF);
+  {
+    if (channel_toggle2 == 0)
+    {
+      channel_toggle2++;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, (g_count_val + channel_duty2));
+    }
+    else
+    {
+      channel_duty2 = Random_ccr();
+      channel_toggle2 = 0;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, (g_count_val + channel_duty2));
+    }
+  }
 
   if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
-    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, (g_count_val + Random_ccr()) % 0XFFFF);
+  {
+    if (channel_toggle3 == 0)
+    {
+      channel_toggle3++;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, (g_count_val + channel_duty3));
+    }
+    else
+    {
+      channel_duty3 = Random_ccr();
+      channel_toggle3 = 0;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, (g_count_val + channel_duty3));
+    }
+  }
 
   if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4)
-    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, (g_count_val + Random_ccr()) % 0XFFFF);
+  {
+    if (channel_toggle4 == 0)
+    {
+      channel_toggle4++;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, (g_count_val + channel_duty4));
+    }
+    else
+    {
+      channel_duty4 = Random_ccr();
+      channel_toggle4 = 0;
+      __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, (g_count_val + channel_duty4));
+    }
+  }
 }
 
 uint8_t Random_ccr(void)
 {
   srand(HAL_GetTick());
-  uint8_t rc = rand() % 20;
-  return (rc + 142);
+  uint8_t rc = rand() % 30;
+  return (rc + BASE_FREQ);
 }
 /* USER CODE END 4 */
 
